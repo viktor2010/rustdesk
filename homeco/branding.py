@@ -29,9 +29,9 @@ APP_NAME = "Homeco-Fernwartung"
 COMPANY = "HomeCo Computersysteme"
 WEBSITE = "https://www.homeco-computersysteme.de"
 
-# Homeco-Farben (aus Logo und Website)
-BLUE = "0061FB"        # Markenblau aus dem Logo
-BLUE_LIGHT = "4D8DFF"  # helleres Blau für die ID (besser lesbar auf Dunkel)
+# Homeco-Farben (aus dem Logo)
+ORANGE = "FF8000"        # Markenorange aus dem Logo
+ORANGE_LIGHT = "FF9A3D"  # helleres Orange für die ID (besser lesbar auf Dunkel)
 INK = "070B14"         # Fensterhintergrund (wie Website --ink)
 INK_2 = "0E1524"       # Flächen, Eingabefelder (--ink-2)
 INK_3 = "18213A"       # Hover (--ink-3)
@@ -121,22 +121,22 @@ fn read_custom_client_advanced_settings(''')
     print("Farben")
     dart = "flutter/lib/common.dart"
     patch(dart, "static const Color accent = Color(0xFF0071FF);",
-          f"static const Color accent = Color(0xFF{BLUE});")
+          f"static const Color accent = Color(0xFF{ORANGE});")
     patch(dart, "static const Color accent50 = Color(0x770071FF);",
-          f"static const Color accent50 = Color(0x77{BLUE});")
+          f"static const Color accent50 = Color(0x77{ORANGE});")
     patch(dart, "static const Color accent80 = Color(0xAA0071FF);",
-          f"static const Color accent80 = Color(0xAA{BLUE});")
+          f"static const Color accent80 = Color(0xAA{ORANGE});")
     patch(dart, "static const Color button = Color(0xFF2C8CFF);",
-          f"static const Color button = Color(0xFF{BLUE});")
+          f"static const Color button = Color(0xFF{ORANGE});")
     patch(dart, "static const Color idColor = Color(0xFF00B6F0);",
-          f"static const Color idColor = Color(0xFF{BLUE_LIGHT});")
+          f"static const Color idColor = Color(0xFF{ORANGE_LIGHT});")
     patch(dart, "Color(0xFF18191E)", f"Color(0xFF{INK})", count=0)
     patch(dart, "Color(0xFF24252B)", f"Color(0xFF{INK_2})", count=0)
     patch(dart, "hoverColor: Color.fromARGB(255, 45, 46, 53),", f"hoverColor: Color(0xFF{INK_3}),")
     patch_between(dart, "class MyTheme {", "static ThemeMode getThemeModePreference",
                   "primary: Colors.blue", "primary: accent")
 
-    print("ID groß in Homeco-Blau (wie im Vorbild)")
+    print("ID groß in Homeco-Orange (wie im Vorbild)")
     patch("flutter/lib/desktop/pages/desktop_home_page.dart",
           "                        style: TextStyle(\n                          fontSize: 22,\n                        ),",
           "                        style: TextStyle(\n                          fontSize: 24,\n"

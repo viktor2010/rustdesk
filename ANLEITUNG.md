@@ -2,7 +2,7 @@
 
 Ergebnis: `Homeco-Fernwartung.exe` zum Download für Kunden. Das Programm
 startet ohne Installation, zeigt im dunklen Homeco-Design das Logo, die ID
-(groß in Homeco-Blau) und das Einmalpasswort, und verbindet sich nur mit dem
+(groß in Homeco-Orange) und das Einmalpasswort, und verbindet sich nur mit dem
 eigenen Homeco-Server. Kunden können damit selbst keine Verbindung aufbauen.
 
 Kosten: 0 € für die Software. Nötig sind ein Server (vorhandener VPS reicht)
@@ -72,7 +72,7 @@ Key = `HOMECO_KEY` eintragen. Dann ID + Passwort vom Kunden eingeben.
 - Name `Homeco-Fernwartung` (Fenster, Exe, Datei-Eigenschaften, Ordner in %APPDATA%)
 - Server + Schlüssel fest eingebaut (aus den GitHub-Secrets)
 - Nur eingehende Verbindungen, kein „Installieren“-Hinweis
-- Dunkles Design in Homeco-Farben: Hintergrund `#070B14`, Flächen `#0E1524`, Blau `#0061FB`
+- Dunkles Design in Homeco-Farben: Hintergrund `#070B14`, Flächen `#0E1524`, Orange `#FF8000`
 - Homeco-Logo oben, HE-Icon für Taskleiste, Tray und Exe
 - Zeile „Homeco Fernwartung · basiert auf RustDesk“ mit Link zur Homeco-Website
 
