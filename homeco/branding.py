@@ -115,7 +115,16 @@ def main() -> None:
     if !installiert {
         hard.insert("disable-installation".to_owned(), "Y".to_owned());
     }
+    // Kunden können nichts verstellen: kein Stift am Passwort, kein ⋮-Menü,
+    // keine Einstellungsseite (Server, Passwort, Sicherheit)
+    hard.insert("disable-settings".to_owned(), "Y".to_owned());
     drop(hard);
+    // … der WAREXA-Agent setzt Server und Passwort aber weiter per Kommandozeile
+    // (rustdesk --option / --password, nur als Administrator am installierten Client)
+    config::BUILTIN_SETTINGS
+        .write()
+        .unwrap()
+        .insert("allow-command-line-settings-when-settings-disabled".to_owned(), "Y".to_owned());
     // Dunkles Design wie die Homeco-Website, unabhängig von Windows-Einstellung
     config::OVERWRITE_LOCAL_SETTINGS
         .write()
@@ -149,6 +158,11 @@ fn read_custom_client_advanced_settings(''')
           "                        style: TextStyle(\n                          fontSize: 24,\n"
           "                          fontWeight: FontWeight.w600,\n"
           "                          color: MyTheme.idColor,\n                        ),")
+
+    print("⋮-Menü ausblenden, wenn Einstellungen gesperrt sind (disable-settings)")
+    patch("flutter/lib/desktop/pages/desktop_home_page.dart",
+          "                        buildPopupMenu(context)\n                      ],",
+          "                        if (!bind.isDisableSettings()) buildPopupMenu(context)\n                      ],")
 
     print("Hinweis „Unterstützt von …“")
     patch(dart, "launchUrl(Uri.parse('https://rustdesk.com'));", f"launchUrl(Uri.parse('{WEBSITE}'));")
