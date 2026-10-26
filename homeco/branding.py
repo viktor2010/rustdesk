@@ -106,8 +106,15 @@ def main() -> None:
     let mut hard = config::HARD_SETTINGS.write().unwrap();
     // Nur eingehende Verbindungen: Kunde zeigt ID + Passwort an
     hard.insert("conn-type".to_owned(), "incoming".to_owned());
-    // Kein „Installieren“-Hinweis: Programm läuft direkt nach dem Download
-    hard.insert("disable-installation".to_owned(), "Y".to_owned());
+    // Portable Version (Kunden-Download): kein „Installieren“-Hinweis.
+    // Installiert (MSI über den WAREXA-Agenten) muss sie als Dienst laufen dürfen.
+    #[cfg(windows)]
+    let installiert = crate::platform::is_installed();
+    #[cfg(not(windows))]
+    let installiert = false;
+    if !installiert {
+        hard.insert("disable-installation".to_owned(), "Y".to_owned());
+    }
     drop(hard);
     // Dunkles Design wie die Homeco-Website, unabhängig von Windows-Einstellung
     config::OVERWRITE_LOCAL_SETTINGS
