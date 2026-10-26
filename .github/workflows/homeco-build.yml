@@ -1,7 +1,9 @@
 # Baut den Homeco-Fernwartungs-Client für Windows (x64).
 # Abgeleitet vom Windows-Job aus flutter-build.yml (RustDesk 1.5.0), ergänzt
-# um den Branding-Schritt (homeco/branding.py). Ohne MSI, Signatur-Dienst,
+# um den Branding-Schritt (homeco/branding.py). Ohne Signatur-Dienst,
 # Druckertreiber und virtuelle Bildschirme – für Kunden-Fernwartung unnötig.
+# Ergebnis: portable Homeco-Fernwartung.exe (Kunden-Download) und
+# Homeco-Fernwartung-<Version>.msi (Installation über den WAREXA-Agenten).
 #
 # Start: GitHub → Actions → „Homeco Fernwartung bauen“ → „Run workflow“.
 # Ergebnis: Release mit Homeco-Fernwartung.exe, dauerhaft erreichbar unter
@@ -141,6 +143,22 @@ jobs:
           mv ./target/release/rustdesk-portable-packer.exe "./out/${{ env.APP_NAME }}.exe"
           sha256sum ./out/*.exe
 
+      # MSI für die Installation über den WAREXA-Agenten (Dienst, unbeaufsichtigter Zugriff).
+      # preprocess.py benennt Produkt, Dienst und Ordner nach --app-name.
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
+
+      - name: Build msi
+        run: |
+          pushd ./res/msi
+          python preprocess.py --arp -d ../../rustdesk --app-name "${{ env.APP_NAME }}" -m "HomeCo Computersysteme"
+          nuget restore msi.sln
+          msbuild msi.sln -p:Configuration=Release -p:Platform=x64 /p:TargetVersion=Windows10
+          $msi = Get-ChildItem ./Package/bin/*/Release/en-us/Package.msi | Select-Object -First 1
+          popd
+          mv $msi.FullName "./out/${{ env.APP_NAME }}-${{ env.VERSION }}.msi"
+          Get-FileHash ./out/*.msi -Algorithm SHA256
+
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -152,4 +170,6 @@ jobs:
         with:
           tag_name: homeco-${{ env.VERSION }}-${{ github.run_number }}
           name: Homeco Fernwartung ${{ env.VERSION }} (Build ${{ github.run_number }})
-          files: ./out/*.exe
+          files: |
+            ./out/*.exe
+            ./out/*.msi
