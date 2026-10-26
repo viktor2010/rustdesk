@@ -9,6 +9,10 @@ Verbindungen (Kunde zeigt ID + Passwort, kann selbst nicht verbinden).
 Server und Schlüssel kommen aus den GitHub-Secrets HOMECO_SERVER und
 HOMECO_KEY, damit sie nicht im öffentlichen Repository stehen müssen.
 
+HOMECO_VARIANT=techniker baut stattdessen „Homeco-Techniker“: gleiches Design
+und gleicher Server, aber nur ausgehende Verbindungen und Einstellungen offen –
+der Client, mit dem die Techniker sich zu den Kunden verbinden.
+
 Jede Änderung prüft, dass die gesuchte Stelle genau so existiert. Hat
 RustDesk den Code in einer neuen Version umgebaut, bricht das Skript mit
 einer klaren Meldung ab, statt still einen halb gebrandeten Client zu bauen.
@@ -23,9 +27,12 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Einstellungen
 # ---------------------------------------------------------------------------
+TECHNIKER = os.environ.get("HOMECO_VARIANT", "").strip().lower() == "techniker"
 # Nur Buchstaben, Ziffern und Bindestrich (Vorgabe von RustDesk). Bestimmt
-# auch den Exe-Namen, den Ordner in %APPDATA% und den Fenstertitel.
-APP_NAME = "Homeco-Fernwartung"
+# auch den Exe-Namen, den Ordner in %APPDATA%, den Fenstertitel und das
+# URL-Schema (homeco-techniker://), über das WAREXA „Verbinden“ öffnet.
+APP_NAME = "Homeco-Techniker" if TECHNIKER else "Homeco-Fernwartung"
+DESCRIPTION = "Homeco Techniker" if TECHNIKER else "Homeco Fernwartung"
 COMPANY = "HomeCo Computersysteme"
 WEBSITE = "https://www.homeco-computersysteme.de"
 
@@ -98,11 +105,18 @@ def main() -> None:
     patch(cfg, 'pub static ref APP_NAME: RwLock<String> = RwLock::new("RustDesk".to_owned());',
           f'pub static ref APP_NAME: RwLock<String> = RwLock::new("{APP_NAME}".to_owned());')
 
-    print("Feste Einstellungen (ersetzt die signierte custom.txt der Pro-Version)")
+    print(f"Feste Einstellungen (ersetzt die signierte custom.txt der Pro-Version) – Variante {APP_NAME}")
     patch("src/common.rs", "pub fn load_custom_client() {\n",
           "pub fn load_custom_client() {\n    homeco_settings();\n")
-    patch("src/common.rs", "fn read_custom_client_advanced_settings(",
-          '''fn homeco_settings() {
+    if TECHNIKER:
+        settings = '''fn homeco_settings() {
+    // Techniker: nur ausgehende Verbindungen, kein eigener Dienst und keine eigene ID
+    config::HARD_SETTINGS
+        .write()
+        .unwrap()
+        .insert("conn-type".to_owned(), "outgoing".to_owned());'''
+    else:
+        settings = '''fn homeco_settings() {
     let mut hard = config::HARD_SETTINGS.write().unwrap();
     // Nur eingehende Verbindungen: Kunde zeigt ID + Passwort an
     hard.insert("conn-type".to_owned(), "incoming".to_owned());
@@ -124,7 +138,8 @@ def main() -> None:
     config::BUILTIN_SETTINGS
         .write()
         .unwrap()
-        .insert("allow-command-line-settings-when-settings-disabled".to_owned(), "Y".to_owned());
+        .insert("allow-command-line-settings-when-settings-disabled".to_owned(), "Y".to_owned());'''
+    patch("src/common.rs", "fn read_custom_client_advanced_settings(", settings + '''
     // Dunkles Design wie die Homeco-Website, unabhängig von Windows-Einstellung
     config::OVERWRITE_LOCAL_SETTINGS
         .write()
@@ -173,11 +188,11 @@ fn read_custom_client_advanced_settings(''')
     for rel in ("Cargo.toml", "libs/portable/Cargo.toml"):
         patch(rel, r'LegalCopyright = "[^"]*"', f'LegalCopyright = "Copyright © {COMPANY}. Basiert auf RustDesk (AGPL-3.0)."', regex=True)
         patch(rel, 'ProductName = "RustDesk"', f'ProductName = "{APP_NAME}"')
-        patch(rel, 'FileDescription = "RustDesk Remote Desktop"', 'FileDescription = "Homeco Fernwartung"')
+        patch(rel, 'FileDescription = "RustDesk Remote Desktop"', f'FileDescription = "{DESCRIPTION}"')
         patch(rel, 'OriginalFilename = "rustdesk.exe"', f'OriginalFilename = "{APP_NAME}.exe"')
     rc = "flutter/windows/runner/Runner.rc"
     patch(rc, 'VALUE "CompanyName", "Purslane Tech Pte. Ltd."', f'VALUE "CompanyName", "{COMPANY}"')
-    patch(rc, 'VALUE "FileDescription", "RustDesk Remote Desktop"', 'VALUE "FileDescription", "Homeco Fernwartung"')
+    patch(rc, 'VALUE "FileDescription", "RustDesk Remote Desktop"', f'VALUE "FileDescription", "{DESCRIPTION}"')
     patch(rc, r'VALUE "LegalCopyright", "[^"]*"', f'VALUE "LegalCopyright", "Copyright © {COMPANY}. Basiert auf RustDesk (AGPL-3.0)."', regex=True)
     patch(rc, 'VALUE "OriginalFilename", "rustdesk.exe"', f'VALUE "OriginalFilename", "{APP_NAME}.exe"')
     patch(rc, 'VALUE "ProductName", "RustDesk"', f'VALUE "ProductName", "{APP_NAME}"')
