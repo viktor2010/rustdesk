@@ -8,11 +8,20 @@
 # Start: GitHub → Actions → „Homeco Fernwartung bauen“ → „Run workflow“.
 # Ergebnis: Release mit Homeco-Fernwartung.exe, dauerhaft erreichbar unter
 # https://github.com/<konto>/<repo>/releases/latest/download/Homeco-Fernwartung.exe
+#
+# Variante „techniker“: Homeco-Techniker.exe/.msi zum Verbinden (nur ausgehend).
+# Wird als Vorabversion veröffentlicht, damit „latest“ beim Kunden-Client bleibt.
 
 name: Homeco Fernwartung bauen
 
 on:
   workflow_dispatch:
+    inputs:
+      variante:
+        description: "kunde = Homeco-Fernwartung (nur eingehend), techniker = Homeco-Techniker (zum Verbinden)"
+        type: choice
+        options: [kunde, techniker]
+        default: kunde
 
 permissions:
   contents: write
@@ -24,7 +33,7 @@ env:
   VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
   VCPKG_COMMIT_ID: "9e593bb18ea69cc5095e012465dcd675a822ed0d"
   VERSION: "1.5.0"
-  APP_NAME: "Homeco-Fernwartung"
+  APP_NAME: ${{ inputs.variante == 'techniker' && 'Homeco-Techniker' || 'Homeco-Fernwartung' }}
 
 jobs:
   generate-bridge:
@@ -56,6 +65,7 @@ jobs:
         env:
           HOMECO_SERVER: ${{ secrets.HOMECO_SERVER }}
           HOMECO_KEY: ${{ secrets.HOMECO_KEY }}
+          HOMECO_VARIANT: ${{ inputs.variante }}
           PYTHONUTF8: "1"
         run: |
           pip3 install pillow
@@ -168,8 +178,9 @@ jobs:
       - name: Publish Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
-          tag_name: homeco-${{ env.VERSION }}-${{ github.run_number }}
-          name: Homeco Fernwartung ${{ env.VERSION }} (Build ${{ github.run_number }})
+          tag_name: ${{ inputs.variante == 'techniker' && 'homeco-techniker' || 'homeco' }}-${{ env.VERSION }}-${{ github.run_number }}
+          name: ${{ env.APP_NAME }} ${{ env.VERSION }} (Build ${{ github.run_number }})
+          prerelease: ${{ inputs.variante == 'techniker' }}
           files: |
             ./out/*.exe
             ./out/*.msi
