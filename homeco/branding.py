@@ -182,6 +182,11 @@ fn read_custom_client_advanced_settings(''')
           "                        buildPopupMenu(context)\n                      ],",
           "                        if (!bind.isDisableSettings()) buildPopupMenu(context)\n                      ],")
 
+    print("Karte „Ihre Version ist veraltet / Zum Upgraden“ ausblenden – Updates kommen über WAREXA")
+    patch("flutter/lib/desktop/pages/desktop_home_page.dart",
+          "} else if (bind.mainIsInstalledLowerVersion()) {",
+          "} else if (false && bind.mainIsInstalledLowerVersion()) {")
+
     print("Hinweis „Unterstützt von …“")
     patch(dart, "launchUrl(Uri.parse('https://rustdesk.com'));", f"launchUrl(Uri.parse('{WEBSITE}'));")
     patch("src/lang/de.rs", r'\("powered_by_me", "[^"]*"\)', f'("powered_by_me", "{POWERED_DE}")', regex=True)
