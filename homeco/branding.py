@@ -35,6 +35,9 @@ APP_NAME = "Homeco-Techniker" if TECHNIKER else "Homeco-Fernwartung"
 DESCRIPTION = "Homeco Techniker" if TECHNIKER else "Homeco Fernwartung"
 COMPANY = "HomeCo Computersysteme"
 WEBSITE = "https://www.homeco-computersysteme.de"
+# Form des Programm-Icons (Desktop, Startmenü, Taskleiste, Tray):
+# "rund" = Kreis, "abgerundet" = Quadrat mit runden Ecken, "eckig" = wie icon.png
+ICON_FORM = "rund"
 
 # Homeco-Farben (aus dem Logo)
 ORANGE = "FF8000"        # Markenorange aus dem Logo
@@ -200,10 +203,23 @@ fn read_custom_client_advanced_settings(''')
     print("Logo und Icons")
     # loadLogo() zeigt assets/logo.png (max. 300x60), loadIcon() bevorzugt assets/icon.png
     shutil.copy(ASSETS / "logo.png", ROOT / "flutter/assets/logo.png")
-    shutil.copy(ASSETS / "icon.png", ROOT / "flutter/assets/icon.png")
-    from PIL import Image  # im Workflow per pip installiert
+    from PIL import Image, ImageDraw  # im Workflow per pip installiert
 
     icon = Image.open(ASSETS / "icon.png").convert("RGBA")
+    if ICON_FORM != "eckig":
+        # Ecken transparent machen; Maske 4x größer zeichnen und verkleinern = glatter Rand
+        w, h = icon.size
+        mask = Image.new("L", (w * 4, h * 4), 0)
+        box = (0, 0, w * 4 - 1, h * 4 - 1)
+        if ICON_FORM == "rund":
+            ImageDraw.Draw(mask).ellipse(box, fill=255)
+        else:  # "abgerundet": Quadrat mit runden Ecken (Radius ~22 %)
+            ImageDraw.Draw(mask).rounded_rectangle(box, radius=int(w * 4 * 0.22), fill=255)
+        mask = mask.resize((w, h), Image.LANCZOS)
+        alpha = Image.new("L", (w, h), 0)
+        alpha.paste(icon.getchannel("A"), mask=mask)
+        icon.putalpha(alpha)
+    icon.save(ROOT / "flutter/assets/icon.png")
     ico_sizes = [(s, s) for s in (16, 24, 32, 48, 64, 128, 256)]
     for rel in ("res/icon.ico", "flutter/windows/runner/resources/app_icon.ico"):
         icon.save(ROOT / rel, sizes=ico_sizes)
